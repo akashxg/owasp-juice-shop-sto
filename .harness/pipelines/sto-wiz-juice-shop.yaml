@@ -4,20 +4,14 @@ pipeline:
   projectIdentifier: AkashSandbox
   orgIdentifier: sandbox
   tags: {}
-  properties:
-    ci:
-      codebase:
-        connectorRef: akashHarnessGitHub
-        repoName: owasp-juice-shop-sto
-        build: <+input>
   stages:
     - stage:
         name: Build and Scan
         identifier: Build_and_Scan
-        description: Run Wiz repo, IaC, and container scans on Juice Shop
+        description: Clone Juice Shop and run Wiz repo, IaC, and container scans
         type: CI
         spec:
-          cloneCodebase: true
+          cloneCodebase: false
           platform:
             os: Linux
             arch: Amd64
@@ -27,6 +21,15 @@ pipeline:
           execution:
             steps:
               - step:
+                  type: Run
+                  name: Clone Juice Shop Repo
+                  identifier: Clone_Juice_Shop_Repo
+                  spec:
+                    shell: Sh
+                    command: |-
+                      git clone --depth 1 --branch sto-wiz-demo https://github.com/akashxg/owasp-juice-shop-sto.git .
+                      ls -la iac .harness
+              - step:
                   type: Wiz
                   name: Wiz Repo Scan
                   identifier: Wiz_Repo_Scan
@@ -35,7 +38,9 @@ pipeline:
                     config: wiz-directory
                     target:
                       type: repository
-                      detection: auto
+                      detection: manual
+                      name: owasp-juice-shop-sto
+                      variant: sto-wiz-demo
                     workspace: /harness
                     advanced:
                       log:
@@ -55,7 +60,9 @@ pipeline:
                     config: wiz-iac-templates
                     target:
                       type: repository
-                      detection: auto
+                      detection: manual
+                      name: owasp-juice-shop-sto-iac
+                      variant: sto-wiz-demo
                     workspace: /harness/iac
                     advanced:
                       log:
@@ -92,25 +99,6 @@ pipeline:
                       access_id: <+secrets.getValue("wiz_access_id")>
                       access_token: <+secrets.getValue("wiz_access_token")>
                   timeout: 30m
-              - step:
-                  type: Policy
-                  name: Policy Block Wiz Critical High
-                  identifier: Policy_Block_Wiz_Critical_High
-                  spec:
-                    policySets:
-                      - project.Wiz_Critical_High_Gate
-                    type: Custom
-                    policySpec:
-                      payload: |-
-                        {
-                          "WIZ_REPO_NEW_CRITICAL": <+execution.steps.Wiz_Repo_Scan.output.outputVariables.NEW_CRITICAL>,
-                          "WIZ_REPO_NEW_HIGH": <+execution.steps.Wiz_Repo_Scan.output.outputVariables.NEW_HIGH>,
-                          "WIZ_IAC_NEW_CRITICAL": <+execution.steps.Wiz_IaC_Scan.output.outputVariables.NEW_CRITICAL>,
-                          "WIZ_IAC_NEW_HIGH": <+execution.steps.Wiz_IaC_Scan.output.outputVariables.NEW_HIGH>,
-                          "WIZ_IMAGE_NEW_CRITICAL": <+execution.steps.Wiz_Container_Scan.output.outputVariables.NEW_CRITICAL>,
-                          "WIZ_IMAGE_NEW_HIGH": <+execution.steps.Wiz_Container_Scan.output.outputVariables.NEW_HIGH>
-                        }
-                  timeout: 10m
         failureStrategies:
           - onFailure:
               errors:

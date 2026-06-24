@@ -1,0 +1,21 @@
+# Optional: merge this Policy step into sto-wiz-juice-shop.yaml after baseline scans validate.
+
+- step:
+    type: Policy
+    name: Policy Block Wiz Critical High
+    identifier: Policy_Block_Wiz_Critical_High
+    spec:
+      policySets:
+        - project.Wiz_Critical_High_Gate
+      type: Custom
+      policySpec:
+        payload: |-
+          {
+            "WIZ_REPO_NEW_CRITICAL": <+execution.steps.Wiz_Repo_Scan.output.outputVariables.NEW_CRITICAL>,
+            "WIZ_REPO_NEW_HIGH": <+execution.steps.Wiz_Repo_Scan.output.outputVariables.NEW_HIGH>,
+            "WIZ_IAC_NEW_CRITICAL": <+execution.steps.Wiz_IaC_Scan.output.outputVariables.NEW_CRITICAL>,
+            "WIZ_IAC_NEW_HIGH": <+execution.steps.Wiz_IaC_Scan.output.outputVariables.NEW_HIGH>,
+            "WIZ_IMAGE_NEW_CRITICAL": <+execution.steps.Wiz_Container_Scan.output.outputVariables.NEW_CRITICAL>,
+            "WIZ_IMAGE_NEW_HIGH": <+execution.steps.Wiz_Container_Scan.output.outputVariables.NEW_HIGH>
+          }
+    timeout: 10m
