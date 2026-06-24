@@ -66,8 +66,8 @@ pipeline:
                       fail_on_severity: none
                     privileged: true
                     auth:
-                      access_id: <+secrets.getValue("wiz_client_id")>
-                      access_token: <+secrets.getValue("wiz_client_secret")>
+                      access_id: <+secrets.getValue("wiz_access_id")>
+                      access_token: <+secrets.getValue("wiz_access_token")>
                   timeout: 30m
               - step:
                   type: Wiz
@@ -86,8 +86,8 @@ pipeline:
                       fail_on_severity: none
                     privileged: true
                     auth:
-                      access_id: <+secrets.getValue("wiz_client_id")>
-                      access_token: <+secrets.getValue("wiz_client_secret")>
+                      access_id: <+secrets.getValue("wiz_access_id")>
+                      access_token: <+secrets.getValue("wiz_access_token")>
                   timeout: 30m
               - step:
                   type: Wiz
@@ -111,8 +111,8 @@ pipeline:
                       name: juice-shop
                       tag: sto-demo
                     auth:
-                      access_id: <+secrets.getValue("wiz_client_id")>
-                      access_token: <+secrets.getValue("wiz_client_secret")>
+                      access_id: <+secrets.getValue("wiz_access_id")>
+                      access_token: <+secrets.getValue("wiz_access_token")>
                   timeout: 30m
               - step:
                   type: Policy

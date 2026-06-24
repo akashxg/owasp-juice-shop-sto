@@ -11,7 +11,7 @@ Intentionally vulnerable [OWASP Juice Shop](https://github.com/juice-shop/juice-
 
 ## Harness setup
 
-1. Create Harness text secrets `wiz_client_id` and `wiz_client_secret` (Wiz CLI v1.x service account).
+1. Ensure Harness text secrets `wiz_access_id` and `wiz_access_token` are set (Wiz CLI v1.x service account). These already exist in AkashSandbox.
 2. Import the OPA policy from `.harness/policies/wiz-critical-high-gate.rego` as **Wiz Critical High Gate**.
 3. Create a Policy Set **Wiz Critical High Gate** (Custom, On Step) and attach the policy.
 4. Create or import the pipeline from `.harness/pipelines/sto-wiz-juice-shop.yaml`.
