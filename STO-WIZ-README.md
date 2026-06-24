@@ -28,10 +28,14 @@ Intentionally vulnerable [OWASP Juice Shop v20.1.0](https://github.com/juice-sho
 
 ## Pipeline flow
 
-1. **Clone** public repo via Run step (no GitHub connector dependency)
-2. **Wiz Directory** scan — full codebase (`config: wiz-directory`)
+**Active stage: Security Scan** (`SecurityTests`)
+
+1. **Clone** repo via `akashgithubaccount` connector (`owasp-juice-shop-sto`, branch `sto-wiz-demo`)
+2. **Wiz Directory** scan — full codebase (`config: wiz-directory`, target auto-detect)
 3. **Wiz IaC** scan — `/harness/iac` only (`config: wiz-iac-templates`)
 4. **Wiz Container** scan — `bkimminich/juice-shop:latest` from Docker Hub
+
+**Skipped stage: Build and Scan** (`CI`) — legacy manual `git clone` + Wiz steps kept for reference (`when: condition: "false"`).
 
 ## Enable OPA gate (after baseline)
 

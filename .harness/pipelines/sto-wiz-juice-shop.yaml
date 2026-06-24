@@ -4,12 +4,24 @@ pipeline:
   projectIdentifier: AkashSandbox
   orgIdentifier: sandbox
   tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: akashgithubaccount
+        repoName: owasp-juice-shop-sto
+        build:
+          type: branch
+          spec:
+            branch: sto-wiz-demo
   stages:
     - stage:
         name: Build and Scan
         identifier: Build_and_Scan
-        description: Clone Juice Shop and run Wiz repo, IaC, and container scans
+        description: Legacy CI stage with manual git clone (skipped; use Security Scan stage)
         type: CI
+        when:
+          pipelineStatus: Success
+          condition: "false"
         spec:
           cloneCodebase: false
           platform:
@@ -77,6 +89,93 @@ pipeline:
                   type: Wiz
                   name: Wiz Container Scan
                   identifier: Wiz_Container_Scan
+                  spec:
+                    mode: orchestration
+                    config: default
+                    target:
+                      type: container
+                      detection: manual
+                      name: bkimminich/juice-shop
+                      variant: latest
+                    advanced:
+                      log:
+                        level: info
+                      fail_on_severity: none
+                    privileged: true
+                    image:
+                      type: docker_v2
+                      domain: docker.io
+                      name: bkimminich/juice-shop
+                      tag: latest
+                    auth:
+                      access_id: <+secrets.getValue("wiz_access_id")>
+                      access_token: <+secrets.getValue("wiz_access_token")>
+                  timeout: 30m
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: Abort
+    - stage:
+        name: Security Scan
+        identifier: Security_Scan
+        description: Wiz repo, IaC, and container scans via SecurityTests stage
+        type: SecurityTests
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Wiz
+                  name: Wiz Repo Scan
+                  identifier: Wiz_Repo_Scan_Sec
+                  spec:
+                    mode: orchestration
+                    config: wiz-directory
+                    target:
+                      type: repository
+                      detection: auto
+                    workspace: /harness
+                    advanced:
+                      log:
+                        level: info
+                      fail_on_severity: none
+                    privileged: true
+                    auth:
+                      access_id: <+secrets.getValue("wiz_access_id")>
+                      access_token: <+secrets.getValue("wiz_access_token")>
+                  timeout: 30m
+              - step:
+                  type: Wiz
+                  name: Wiz IaC Scan
+                  identifier: Wiz_IaC_Scan_Sec
+                  spec:
+                    mode: orchestration
+                    config: wiz-iac-templates
+                    target:
+                      type: repository
+                      detection: auto
+                    workspace: /harness/iac
+                    advanced:
+                      log:
+                        level: info
+                      fail_on_severity: none
+                    privileged: true
+                    auth:
+                      access_id: <+secrets.getValue("wiz_access_id")>
+                      access_token: <+secrets.getValue("wiz_access_token")>
+                  timeout: 30m
+              - step:
+                  type: Wiz
+                  name: Wiz Container Scan
+                  identifier: Wiz_Container_Scan_Sec
                   spec:
                     mode: orchestration
                     config: default
