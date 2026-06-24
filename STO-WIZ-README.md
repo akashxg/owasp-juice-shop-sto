@@ -11,7 +11,7 @@ Intentionally vulnerable [OWASP Juice Shop v20.1.0](https://github.com/juice-sho
 | Juice Shop source (upstream) | Repo + container scan targets (npm CVEs, secrets, SAST) |
 | [`iac/`](iac/) | Intentional K8s + Terraform misconfigs for Wiz IaC scans |
 | [`.harness/pipelines/sto-wiz-juice-shop.yaml`](.harness/pipelines/sto-wiz-juice-shop.yaml) | Baseline CI pipeline — 3 Wiz orchestration scans (`fail_on_severity: none`) |
-| [`.harness/pipelines/sto-wiz-juice-shop-gate.yaml`](.harness/pipelines/sto-wiz-juice-shop-gate.yaml) | Optional OPA policy step reference (add after baseline validation) |
+| [`.harness/pipelines/sto-wiz-juice-shop-policy-step.yaml`](.harness/pipelines/sto-wiz-juice-shop-policy-step.yaml) | Optional OPA policy step snippet (merge after baseline validation) |
 | [`.harness/policies/wiz-critical-high-gate.rego`](.harness/policies/wiz-critical-high-gate.rego) | Rego policy blocking on critical/high Wiz findings |
 
 ## Harness resources (AkashSandbox)
@@ -36,7 +36,7 @@ Intentionally vulnerable [OWASP Juice Shop v20.1.0](https://github.com/juice-sho
 ## Enable OPA gate (after baseline)
 
 1. Confirm findings appear in the execution **Security Tests** tab.
-2. In Pipeline Studio, add a **Policy** step after the Wiz scans using [`.harness/pipelines/sto-wiz-juice-shop-gate.yaml`](.harness/pipelines/sto-wiz-juice-shop-gate.yaml) as reference.
+2. In Pipeline Studio, add the **Policy** step from [`.harness/pipelines/sto-wiz-juice-shop-policy-step.yaml`](.harness/pipelines/sto-wiz-juice-shop-policy-step.yaml) after the Wiz scans.
 3. Re-run — pipeline should block when `NEW_CRITICAL` or `NEW_HIGH` > 0 on any Wiz step.
 
 ## OWASP mapping (static scans)
