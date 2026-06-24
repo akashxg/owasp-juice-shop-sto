@@ -1,0 +1,141 @@
+pipeline:
+  name: STO Wiz Juice Shop
+  identifier: sto_wiz_juice_shop
+  projectIdentifier: AkashSandbox
+  orgIdentifier: sandbox
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: akashHarnessGitHub
+        repoName: owasp-juice-shop-sto
+        build: <+input>
+  stages:
+    - stage:
+        name: Build and Scan
+        identifier: Build_and_Scan
+        description: Build Juice Shop image and run Wiz repo, IaC, and container scans
+        type: CI
+        spec:
+          cloneCodebase: true
+          sharedPaths:
+            - /var/run
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Background
+                  name: Docker Daemon
+                  identifier: Docker_Daemon
+                  spec:
+                    connectorRef: Harness_Docker_Connector
+                    image: docker:dind
+                    shell: Sh
+                    entrypoint:
+                      - dockerd
+                    privileged: true
+              - step:
+                  type: Run
+                  name: Build Juice Shop Image
+                  identifier: Build_Juice_Shop_Image
+                  spec:
+                    connectorRef: Harness_Docker_Connector
+                    image: docker:24-cli
+                    shell: Sh
+                    command: docker build -t juice-shop:sto-demo .
+                    privileged: true
+              - step:
+                  type: Wiz
+                  name: Wiz Repo Scan
+                  identifier: Wiz_Repo_Scan
+                  spec:
+                    mode: orchestration
+                    config: wiz-directory
+                    target:
+                      type: repository
+                      detection: auto
+                    workspace: /harness
+                    advanced:
+                      log:
+                        level: info
+                      fail_on_severity: none
+                    privileged: true
+                    auth:
+                      access_id: <+secrets.getValue("wiz_client_id")>
+                      access_token: <+secrets.getValue("wiz_client_secret")>
+                  timeout: 30m
+              - step:
+                  type: Wiz
+                  name: Wiz IaC Scan
+                  identifier: Wiz_IaC_Scan
+                  spec:
+                    mode: orchestration
+                    config: wiz-iac
+                    target:
+                      type: repository
+                      detection: auto
+                    workspace: /harness/iac
+                    advanced:
+                      log:
+                        level: info
+                      fail_on_severity: none
+                    privileged: true
+                    auth:
+                      access_id: <+secrets.getValue("wiz_client_id")>
+                      access_token: <+secrets.getValue("wiz_client_secret")>
+                  timeout: 30m
+              - step:
+                  type: Wiz
+                  name: Wiz Container Scan
+                  identifier: Wiz_Container_Scan
+                  spec:
+                    mode: orchestration
+                    config: default
+                    target:
+                      type: container
+                      detection: manual
+                      name: juice-shop
+                      variant: sto-demo
+                    advanced:
+                      log:
+                        level: info
+                      fail_on_severity: none
+                    privileged: true
+                    image:
+                      type: local_image
+                      name: juice-shop
+                      tag: sto-demo
+                    auth:
+                      access_id: <+secrets.getValue("wiz_client_id")>
+                      access_token: <+secrets.getValue("wiz_client_secret")>
+                  timeout: 30m
+              - step:
+                  type: Policy
+                  name: Policy Block Wiz Critical High
+                  identifier: Policy_Block_Wiz_Critical_High
+                  spec:
+                    policySets:
+                      - project.Wiz_Critical_High_Gate
+                    type: Custom
+                    policySpec:
+                      payload: |-
+                        {
+                          "WIZ_REPO_NEW_CRITICAL": <+execution.steps.Wiz_Repo_Scan.output.outputVariables.NEW_CRITICAL>,
+                          "WIZ_REPO_NEW_HIGH": <+execution.steps.Wiz_Repo_Scan.output.outputVariables.NEW_HIGH>,
+                          "WIZ_IAC_NEW_CRITICAL": <+execution.steps.Wiz_IaC_Scan.output.outputVariables.NEW_CRITICAL>,
+                          "WIZ_IAC_NEW_HIGH": <+execution.steps.Wiz_IaC_Scan.output.outputVariables.NEW_HIGH>,
+                          "WIZ_IMAGE_NEW_CRITICAL": <+execution.steps.Wiz_Container_Scan.output.outputVariables.NEW_CRITICAL>,
+                          "WIZ_IMAGE_NEW_HIGH": <+execution.steps.Wiz_Container_Scan.output.outputVariables.NEW_HIGH>
+                        }
+                  timeout: 10m
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: Abort

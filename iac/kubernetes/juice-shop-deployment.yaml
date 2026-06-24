@@ -1,0 +1,62 @@
+# INTENTIONALLY INSECURE — for Harness STO + Wiz IaC scan demo only.
+# Do NOT deploy to a real cluster.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: juice-shop-db-secret
+  namespace: default
+type: Opaque
+stringData:
+  DB_PASSWORD: "SuperSecretJuiceShopPassword123!"
+  API_KEY: "sk_live_intentionally_exposed_demo_key_abcdef"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: juice-shop
+  namespace: default
+  labels:
+    app: juice-shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: juice-shop
+  template:
+    metadata:
+      labels:
+        app: juice-shop
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: juice-shop
+          image: bkimminich/juice-shop:latest
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+            runAsUser: 0
+            allowPrivilegeEscalation: true
+          env:
+            - name: DATABASE_URL
+              value: "postgres://admin:SuperSecretJuiceShopPassword123!@db.example.com:5432/juiceshop"
+            - name: JWT_SECRET
+              value: "weak-jwt-secret-for-demo"
+          ports:
+            - containerPort: 3000
+              hostPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: juice-shop
+  namespace: default
+spec:
+  type: LoadBalancer
+  selector:
+    app: juice-shop
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
