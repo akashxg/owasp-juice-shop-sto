@@ -14,12 +14,10 @@ pipeline:
     - stage:
         name: Build and Scan
         identifier: Build_and_Scan
-        description: Build Juice Shop image and run Wiz repo, IaC, and container scans
+        description: Run Wiz repo, IaC, and container scans on Juice Shop
         type: CI
         spec:
           cloneCodebase: true
-          sharedPaths:
-            - /var/run
           platform:
             os: Linux
             arch: Amd64
@@ -28,27 +26,6 @@ pipeline:
             spec: {}
           execution:
             steps:
-              - step:
-                  type: Background
-                  name: Docker Daemon
-                  identifier: Docker_Daemon
-                  spec:
-                    connectorRef: Harness_Docker_Connector
-                    image: docker:dind
-                    shell: Sh
-                    entrypoint:
-                      - dockerd
-                    privileged: true
-              - step:
-                  type: Run
-                  name: Build Juice Shop Image
-                  identifier: Build_Juice_Shop_Image
-                  spec:
-                    connectorRef: Harness_Docker_Connector
-                    image: docker:24-cli
-                    shell: Sh
-                    command: docker build -t juice-shop:sto-demo .
-                    privileged: true
               - step:
                   type: Wiz
                   name: Wiz Repo Scan
@@ -99,17 +76,18 @@ pipeline:
                     target:
                       type: container
                       detection: manual
-                      name: juice-shop
-                      variant: sto-demo
+                      name: bkimminich/juice-shop
+                      variant: latest
                     advanced:
                       log:
                         level: info
                       fail_on_severity: none
                     privileged: true
                     image:
-                      type: local_image
-                      name: juice-shop
-                      tag: sto-demo
+                      type: docker_v2
+                      domain: docker.io
+                      name: bkimminich/juice-shop
+                      tag: latest
                     auth:
                       access_id: <+secrets.getValue("wiz_access_id")>
                       access_token: <+secrets.getValue("wiz_access_token")>
