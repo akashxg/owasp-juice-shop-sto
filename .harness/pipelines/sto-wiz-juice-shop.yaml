@@ -75,7 +75,7 @@ pipeline:
                   identifier: Wiz_IaC_Scan
                   spec:
                     mode: orchestration
-                    config: wiz-iac
+                    config: wiz-iac-templates
                     target:
                       type: repository
                       detection: auto
